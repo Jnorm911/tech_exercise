@@ -19,7 +19,9 @@ namespace StargateAPI.Business.Data
 
         public DateTime? DutyEndDate { get; set; }
 
-        public virtual Person Person { get; set; }
+        // This is required because of the foreign key, but EF sets it after creating the entity.
+        // null! stops the constructor warning since EF will fill this in.
+        public virtual Person Person { get; set; } = null!;
     }
 
     public class AstronautDutyConfiguration : IEntityTypeConfiguration<AstronautDuty>

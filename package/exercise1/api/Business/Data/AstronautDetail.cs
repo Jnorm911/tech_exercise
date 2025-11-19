@@ -19,7 +19,9 @@ namespace StargateAPI.Business.Data
 
         public DateTime? CareerEndDate { get; set; }
 
-        public virtual Person Person { get; set; }
+        // AstronautDetail can’t exist without a Person and the foreign key already enforces that.
+        // null! tells the compiler EF will handle the wiring when it loads the entity.
+        public virtual Person Person { get; set; } = null!;
     }
 
     public class AstronautDetailConfiguration : IEntityTypeConfiguration<AstronautDetail>

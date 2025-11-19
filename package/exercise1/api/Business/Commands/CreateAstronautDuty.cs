@@ -57,6 +57,9 @@ namespace StargateAPI.Business.Commands
 
             var person = await _context.Connection.QueryFirstOrDefaultAsync<Person>(query);
 
+            // Same guard pattern used in the preprocessor. Required here to satisfy that the query can be null.
+            if (person is null) throw new BadHttpRequestException("Bad Request");
+
             query = $"SELECT * FROM [AstronautDetail] WHERE {person.Id} = PersonId";
 
             var astronautDetail = await _context.Connection.QueryFirstOrDefaultAsync<AstronautDetail>(query);
