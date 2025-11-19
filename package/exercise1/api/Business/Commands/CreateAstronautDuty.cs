@@ -30,11 +30,16 @@ namespace StargateAPI.Business.Commands
 
         public Task Process(CreateAstronautDuty request, CancellationToken cancellationToken)
         {
+            // Validate that the person exists before creating a duty.
             var person = _context.People.AsNoTracking().FirstOrDefault(z => z.Name == request.Name);
 
             if (person is null) throw new BadHttpRequestException("Bad Request");
 
-            var verifyNoPreviousDuty = _context.AstronautDuties.FirstOrDefault(z => z.DutyTitle == request.DutyTitle && z.DutyStartDate == request.DutyStartDate);
+            // Prevent duplicate duties for the same person on the same start date.
+            var verifyNoPreviousDuty = _context.AstronautDuties.FirstOrDefault(z =>
+                z.PersonId == person.Id &&
+                z.DutyTitle == request.DutyTitle &&
+                z.DutyStartDate == request.DutyStartDate);
 
             if (verifyNoPreviousDuty is not null) throw new BadHttpRequestException("Bad Request");
 
@@ -52,17 +57,18 @@ namespace StargateAPI.Business.Commands
         }
         public async Task<CreateAstronautDutyResult> Handle(CreateAstronautDuty request, CancellationToken cancellationToken)
         {
+            // Switched to parameterized SQL for safety and clarity.
+            var query = "SELECT * FROM [Person] WHERE Name = @Name";
 
-            var query = $"SELECT * FROM [Person] WHERE \'{request.Name}\' = Name";
+            var person = await _context.Connection.QueryFirstOrDefaultAsync<Person>(query, new { Name = request.Name });
 
-            var person = await _context.Connection.QueryFirstOrDefaultAsync<Person>(query);
-
-            // Same guard pattern used in the preprocessor. Required here to satisfy that the query can be null.
+            // Defensive guard: the preprocessor should block unknown names, but protect against a null result.
             if (person is null) throw new BadHttpRequestException("Bad Request");
 
-            query = $"SELECT * FROM [AstronautDetail] WHERE {person.Id} = PersonId";
+            // Param-based lookup to avoid raw ID injection.
+            query = "SELECT * FROM [AstronautDetail] WHERE PersonId = @PersonId";
 
-            var astronautDetail = await _context.Connection.QueryFirstOrDefaultAsync<AstronautDetail>(query);
+            var astronautDetail = await _context.Connection.QueryFirstOrDefaultAsync<AstronautDetail>(query, new { PersonId = person.Id });
 
             if (astronautDetail == null)
             {
@@ -73,7 +79,8 @@ namespace StargateAPI.Business.Commands
                 astronautDetail.CareerStartDate = request.DutyStartDate.Date;
                 if (request.DutyTitle == "RETIRED")
                 {
-                    astronautDetail.CareerEndDate = request.DutyStartDate.Date;
+                    // Career ends the day before retirement starts per requirements.
+                    astronautDetail.CareerEndDate = request.DutyStartDate.AddDays(-1).Date;
                 }
 
                 await _context.AstronautDetails.AddAsync(astronautDetail);
@@ -85,14 +92,16 @@ namespace StargateAPI.Business.Commands
                 astronautDetail.CurrentRank = request.Rank;
                 if (request.DutyTitle == "RETIRED")
                 {
+                    // Career ends the day before retirement starts per requirements.
                     astronautDetail.CareerEndDate = request.DutyStartDate.AddDays(-1).Date;
                 }
                 _context.AstronautDetails.Update(astronautDetail);
             }
 
-            query = $"SELECT * FROM [AstronautDuty] WHERE {person.Id} = PersonId Order By DutyStartDate Desc";
+            // Parameterized to keep it simple and safe. Get the most recent duty so we can close it.
+            query = "SELECT * FROM [AstronautDuty] WHERE PersonId = @PersonId ORDER BY DutyStartDate DESC";
 
-            var astronautDuty = await _context.Connection.QueryFirstOrDefaultAsync<AstronautDuty>(query);
+            var astronautDuty = await _context.Connection.QueryFirstOrDefaultAsync<AstronautDuty>(query, new { PersonId = person.Id });
 
             if (astronautDuty != null)
             {

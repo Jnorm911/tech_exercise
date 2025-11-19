@@ -24,11 +24,10 @@ namespace StargateAPI.Business.Queries
         {
             var result = new GetAstronautDutiesByNameResult();
 
-            var query = $"SELECT a.Id as PersonId, a.Name, b.CurrentRank, b.CurrentDutyTitle, b.CareerStartDate, b.CareerEndDate " +
-                        $"FROM [Person] a LEFT JOIN [AstronautDetail] b on b.PersonId = a.Id " +
-                        $"WHERE '{request.Name}' = a.Name";
+            // Parameterized SQL to remove injection risk.
+            var query = "SELECT a.Id as PersonId, a.Name, b.CurrentRank, b.CurrentDutyTitle, b.CareerStartDate, b.CareerEndDate FROM [Person] a LEFT JOIN [AstronautDetail] b on b.PersonId = a.Id WHERE a.Name = @Name";
 
-            var person = await _context.Connection.QueryFirstOrDefaultAsync<PersonAstronaut>(query);
+            var person = await _context.Connection.QueryFirstOrDefaultAsync<PersonAstronaut>(query, new { Name = request.Name });
 
             // Queries can come back empty, so guard against a null result.
             if (person == null)
@@ -36,9 +35,10 @@ namespace StargateAPI.Business.Queries
 
             result.Person = person;
 
-            query = $"SELECT * FROM [AstronautDuty] WHERE {person.PersonId} = PersonId ORDER BY DutyStartDate DESC";
+            // Uses parameters to avoid raw ID injection.
+            query = "SELECT * FROM [AstronautDuty] WHERE PersonId = @PersonId ORDER BY DutyStartDate DESC";
 
-            var duties = await _context.Connection.QueryAsync<AstronautDuty>(query);
+            var duties = await _context.Connection.QueryAsync<AstronautDuty>(query, new { PersonId = person.PersonId });
 
             result.AstronautDuties = duties.ToList();
 
