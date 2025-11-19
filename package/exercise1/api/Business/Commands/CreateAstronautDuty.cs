@@ -1,4 +1,3 @@
-﻿using Dapper;
 using MediatR;
 using MediatR.Pipeline;
 using Microsoft.EntityFrameworkCore;
@@ -57,18 +56,12 @@ namespace StargateAPI.Business.Commands
         }
         public async Task<CreateAstronautDutyResult> Handle(CreateAstronautDuty request, CancellationToken cancellationToken)
         {
-            // Switched to parameterized SQL for safety and clarity.
-            var query = "SELECT * FROM [Person] WHERE Name = @Name";
-
-            var person = await _context.Connection.QueryFirstOrDefaultAsync<Person>(query, new { Name = request.Name });
+            var person = await _context.People.FirstOrDefaultAsync(p => p.Name == request.Name, cancellationToken);
 
             // Defensive guard: the preprocessor should block unknown names, but protect against a null result.
             if (person is null) throw new BadHttpRequestException("Bad Request");
 
-            // Param-based lookup to avoid raw ID injection.
-            query = "SELECT * FROM [AstronautDetail] WHERE PersonId = @PersonId";
-
-            var astronautDetail = await _context.Connection.QueryFirstOrDefaultAsync<AstronautDetail>(query, new { PersonId = person.Id });
+            var astronautDetail = await _context.AstronautDetails.FirstOrDefaultAsync(a => a.PersonId == person.Id, cancellationToken);
 
             if (astronautDetail == null)
             {
@@ -98,10 +91,10 @@ namespace StargateAPI.Business.Commands
                 _context.AstronautDetails.Update(astronautDetail);
             }
 
-            // Parameterized to keep it simple and safe. Get the most recent duty so we can close it.
-            query = "SELECT * FROM [AstronautDuty] WHERE PersonId = @PersonId ORDER BY DutyStartDate DESC";
-
-            var astronautDuty = await _context.Connection.QueryFirstOrDefaultAsync<AstronautDuty>(query, new { PersonId = person.Id });
+            var astronautDuty = await _context.AstronautDuties
+                .Where(d => d.PersonId == person.Id)
+                .OrderByDescending(d => d.DutyStartDate)
+                .FirstOrDefaultAsync(cancellationToken);
 
             if (astronautDuty != null)
             {
