@@ -24,7 +24,7 @@ namespace StargateAPI.Business.Queries
         {
             var result = new GetPersonByNameResult();
 
-            // Parameterized query — safe, case-insensitive
+            // Parameterized query, injection safe, case-insensitive
             var query =
                 "SELECT a.Id as PersonId, a.Name, b.CurrentRank, b.CurrentDutyTitle, " +
                 "b.CareerStartDate, b.CareerEndDate " +
@@ -35,11 +35,11 @@ namespace StargateAPI.Business.Queries
             // Normalize input
             var normalizedName = request.Name.Trim();
 
-            // Query for a single match
+            // Query for a single match, readme specifies names should be unique
             var person = await _context.Connection
                 .QueryFirstOrDefaultAsync<PersonAstronaut>(query, new { Name = normalizedName });
 
-            result.Person = person; // Person may be null and that is OK
+            result.Person = person;
 
             return result;
         }

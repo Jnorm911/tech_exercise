@@ -32,6 +32,7 @@ namespace StargateAPI.Business.Commands
         {
             _logger.LogInformation("Validating duty for {Name}", request.Name);
 
+            // Using EF for validation to stay consistent with the refactor.
             var person = _context.People.AsNoTracking().FirstOrDefault(z => z.Name == request.Name);
 
             if (person is null)
@@ -40,6 +41,7 @@ namespace StargateAPI.Business.Commands
                 throw new BadHttpRequestException("Bad Request");
             }
 
+            // Validates duplicates by person and date to match rule requirements.
             var verifyNoPreviousDuty = _context.AstronautDuties.FirstOrDefault(z =>
                 z.PersonId == person.Id &&
                 z.DutyTitle == request.DutyTitle &&
@@ -70,6 +72,7 @@ namespace StargateAPI.Business.Commands
         {
             _logger.LogInformation("Handling CreateAstronautDuty for {Name}", request.Name);
 
+            // Using EF instead of Dapper to follow project patterns and keep tracking.
             var person = await _context.People.FirstOrDefaultAsync(p => p.Name == request.Name, cancellationToken);
 
             if (person is null)
@@ -82,6 +85,7 @@ namespace StargateAPI.Business.Commands
 
             if (astronautDetail == null)
             {
+                // EF-managed update to keep current duty and rank aligned to rules.
                 astronautDetail = new AstronautDetail
                 {
                     PersonId = person.Id,
@@ -117,6 +121,7 @@ namespace StargateAPI.Business.Commands
 
             if (astronautDuty != null)
             {
+                // Ensures previous duty closes the day before the new duty starts.
                 astronautDuty.DutyEndDate = request.DutyStartDate.AddDays(-1).Date;
                 _context.AstronautDuties.Update(astronautDuty);
             }
@@ -132,6 +137,7 @@ namespace StargateAPI.Business.Commands
 
             await _context.AstronautDuties.AddAsync(newAstronautDuty);
 
+            // Wrapped save in logging for modern error handling.
             try
             {
                 await _context.SaveChangesAsync();

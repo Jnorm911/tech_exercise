@@ -23,7 +23,7 @@ namespace StargateAPI.Business.Queries
         {
             var result = new GetPeopleResult();
 
-            // Fixed: removed unnecessary string interpolation for safety and consistency
+            // Updated for modern SQL injection safety
             var query =
                 "SELECT a.Id as PersonId, a.Name, b.CurrentRank, b.CurrentDutyTitle, " +
                 "b.CareerStartDate, b.CareerEndDate " +

@@ -29,7 +29,7 @@ namespace StargateAPI.Business.Queries
 
             var result = new GetAstronautDutiesByNameResult();
 
-            // Parameterized SQL to remove injection risk.
+            // Updated for modern SQL injection safety, was raw before
             var query = "SELECT a.Id as PersonId, a.Name, b.CurrentRank, b.CurrentDutyTitle, b.CareerStartDate, b.CareerEndDate FROM [Person] a LEFT JOIN [AstronautDetail] b on b.PersonId = a.Id WHERE a.Name = @Name";
 
             var person = await _context.Connection.QueryFirstOrDefaultAsync<PersonAstronaut>(query, new { Name = request.Name });
@@ -43,7 +43,7 @@ namespace StargateAPI.Business.Queries
 
             result.Person = person;
 
-            // Uses parameters to avoid raw ID injection.
+            // Uses a parameterized query to follow modern safe SQL practices.
             query = "SELECT * FROM [AstronautDuty] WHERE PersonId = @PersonId ORDER BY DutyStartDate DESC";
 
             var duties = await _context.Connection.QueryAsync<AstronautDuty>(query, new { PersonId = person.PersonId });
