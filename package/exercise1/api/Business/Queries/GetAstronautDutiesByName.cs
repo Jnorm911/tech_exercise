@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using MediatR;
+using Microsoft.Extensions.Logging; // Logging.
 using StargateAPI.Business.Data;
 using StargateAPI.Business.Dtos;
 using StargateAPI.Controllers;
@@ -14,14 +15,18 @@ namespace StargateAPI.Business.Queries
     public class GetAstronautDutiesByNameHandler : IRequestHandler<GetAstronautDutiesByName, GetAstronautDutiesByNameResult>
     {
         private readonly StargateContext _context;
+        private readonly ILogger<GetAstronautDutiesByNameHandler> _logger; // Logger.
 
-        public GetAstronautDutiesByNameHandler(StargateContext context)
+        public GetAstronautDutiesByNameHandler(StargateContext context, ILogger<GetAstronautDutiesByNameHandler> logger)
         {
-            _context = context;
+            _context = context; // Context.
+            _logger = logger; // Logger.
         }
 
         public async Task<GetAstronautDutiesByNameResult> Handle(GetAstronautDutiesByName request, CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Querying duties for {Name}", request.Name); // Begin.
+
             var result = new GetAstronautDutiesByNameResult();
 
             // Parameterized SQL to remove injection risk.
@@ -31,7 +36,10 @@ namespace StargateAPI.Business.Queries
 
             // Queries can come back empty, so guard against a null result.
             if (person == null)
+            {
+                _logger.LogWarning("No astronaut found for {Name}", request.Name); // No result.
                 return result;
+            }
 
             result.Person = person;
 
@@ -42,6 +50,8 @@ namespace StargateAPI.Business.Queries
 
             result.AstronautDuties = duties.ToList();
 
+            _logger.LogInformation("Duties retrieved for {Name}", request.Name); // Retrieved.
+
             return result;
         }
     }
@@ -51,6 +61,5 @@ namespace StargateAPI.Business.Queries
         // Marked nullable because this property isn't set in the constructor.
         // It's populated by the query, so the compiler can't guarantee non-null.
         public PersonAstronaut? Person { get; set; }
-        public List<AstronautDuty> AstronautDuties { get; set; } = new List<AstronautDuty>();
-    }
+        public List<AstronautDuty> AstronautDuties { get; set; } = new List<AstronautDuty>();    }
 }

@@ -1,12 +1,9 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using StargateAPI.Business.Commands;
 using StargateAPI.Business.Data;
-using Xunit;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace StrategyAPI.Tests.Astronaut
 {
@@ -31,7 +28,8 @@ namespace StrategyAPI.Tests.Astronaut
 
             using var context = CreateContext(connection);
 
-            var preProcessor = new CreateAstronautDutyPreProcessor(context);
+            var preLogger = NullLogger<CreateAstronautDutyPreProcessor>.Instance;
+            var preProcessor = new CreateAstronautDutyPreProcessor(context, preLogger);
 
             var request = new CreateAstronautDuty
             {
@@ -72,7 +70,8 @@ namespace StrategyAPI.Tests.Astronaut
             context.AstronautDuties.Add(existingDuty);
             await context.SaveChangesAsync();
 
-            var preProcessor = new CreateAstronautDutyPreProcessor(context);
+            var preLogger = NullLogger<CreateAstronautDutyPreProcessor>.Instance;
+            var preProcessor = new CreateAstronautDutyPreProcessor(context, preLogger);
 
             var request = new CreateAstronautDuty
             {
@@ -102,7 +101,8 @@ namespace StrategyAPI.Tests.Astronaut
             context.People.Add(person);
             await context.SaveChangesAsync();
 
-            var preProcessor = new CreateAstronautDutyPreProcessor(context);
+            var preLogger = NullLogger<CreateAstronautDutyPreProcessor>.Instance;
+            var preProcessor = new CreateAstronautDutyPreProcessor(context, preLogger);
 
             var request = new CreateAstronautDuty
             {
@@ -144,7 +144,8 @@ namespace StrategyAPI.Tests.Astronaut
             context.People.Add(person);
             await context.SaveChangesAsync();
 
-            var handler = new CreateAstronautDutyHandler(context);
+            var logger = NullLogger<CreateAstronautDutyHandler>.Instance;
+            var handler = new CreateAstronautDutyHandler(context, logger);
             return (context, handler, person);
         }
 
@@ -156,7 +157,8 @@ namespace StrategyAPI.Tests.Astronaut
 
             using var context = CreateContext(connection);
 
-            var handler = new CreateAstronautDutyHandler(context);
+            var logger = NullLogger<CreateAstronautDutyHandler>.Instance;
+            var handler = new CreateAstronautDutyHandler(context, logger);
 
             var request = new CreateAstronautDuty
             {

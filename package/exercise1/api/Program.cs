@@ -3,6 +3,8 @@ using StargateAPI.Business.Commands;
 using StargateAPI.Business.Data;
 
 var builder = WebApplication.CreateBuilder(args);
+// Add logging.
+builder.Logging.AddConsole();
 
 // Add services to the container.
 

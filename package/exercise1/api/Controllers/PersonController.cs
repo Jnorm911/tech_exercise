@@ -6,12 +6,17 @@ using System.Net;
 
 namespace StargateAPI.Controllers
 {
-   
+    public class CreatePersonRequest
+    {
+        public required string Name { get; set; }
+    }
+
     [ApiController]
     [Route("[controller]")]
     public class PersonController : ControllerBase
     {
         private readonly IMediator _mediator;
+
         public PersonController(IMediator mediator)
         {
             _mediator = mediator;
@@ -22,16 +27,12 @@ namespace StargateAPI.Controllers
         {
             try
             {
-                var result = await _mediator.Send(new GetPeople()
-                {
-
-                });
-
+                var result = await _mediator.Send(new GetPeople());
                 return this.GetResponse(result);
             }
             catch (Exception ex)
             {
-                return this.GetResponse(new BaseResponse()
+                return this.GetResponse(new BaseResponse
                 {
                     Message = ex.Message,
                     Success = false,
@@ -45,7 +46,7 @@ namespace StargateAPI.Controllers
         {
             try
             {
-                var result = await _mediator.Send(new GetPersonByName()
+                var result = await _mediator.Send(new GetPersonByName
                 {
                     Name = name
                 });
@@ -54,7 +55,7 @@ namespace StargateAPI.Controllers
             }
             catch (Exception ex)
             {
-                return this.GetResponse(new BaseResponse()
+                return this.GetResponse(new BaseResponse
                 {
                     Message = ex.Message,
                     Success = false,
@@ -64,27 +65,52 @@ namespace StargateAPI.Controllers
         }
 
         [HttpPost("")]
-        public async Task<IActionResult> CreatePerson([FromBody] string name)
+        public async Task<IActionResult> CreatePerson([FromBody] CreatePersonRequest request)
         {
             try
             {
-                var result = await _mediator.Send(new CreatePerson()
+                var result = await _mediator.Send(new CreatePerson
                 {
-                    Name = name
+                    Name = request.Name
                 });
 
                 return this.GetResponse(result);
             }
             catch (Exception ex)
             {
-                return this.GetResponse(new BaseResponse()
+                return this.GetResponse(new BaseResponse
                 {
                     Message = ex.Message,
                     Success = false,
                     ResponseCode = (int)HttpStatusCode.InternalServerError
                 });
             }
+        }
 
+
+        // Missing PUT added
+        [HttpPut("")]
+        public async Task<IActionResult> UpdatePerson([FromBody] UpdatePerson request)
+        {
+            try
+            {
+                var result = await _mediator.Send(new UpdatePerson
+                {
+                    CurrentName = request.CurrentName,
+                    NewName = request.NewName
+                });
+
+                return this.GetResponse(result);
+            }
+            catch (Exception ex)
+            {
+                return this.GetResponse(new BaseResponse
+                {
+                    Message = ex.Message,
+                    Success = false,
+                    ResponseCode = (int)HttpStatusCode.InternalServerError
+                });
+            }
         }
     }
 }

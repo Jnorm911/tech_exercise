@@ -18,11 +18,17 @@ namespace StargateAPI.Business.Queries
         {
             _context = context;
         }
+
         public async Task<GetPeopleResult> Handle(GetPeople request, CancellationToken cancellationToken)
         {
             var result = new GetPeopleResult();
 
-            var query = $"SELECT a.Id as PersonId, a.Name, b.CurrentRank, b.CurrentDutyTitle, b.CareerStartDate, b.CareerEndDate FROM [Person] a LEFT JOIN [AstronautDetail] b on b.PersonId = a.Id";
+            // Fixed: removed unnecessary string interpolation for safety and consistency
+            var query =
+                "SELECT a.Id as PersonId, a.Name, b.CurrentRank, b.CurrentDutyTitle, " +
+                "b.CareerStartDate, b.CareerEndDate " +
+                "FROM [Person] a " +
+                "LEFT JOIN [AstronautDetail] b ON b.PersonId = a.Id";
 
             var people = await _context.Connection.QueryAsync<PersonAstronaut>(query);
 
@@ -34,7 +40,6 @@ namespace StargateAPI.Business.Queries
 
     public class GetPeopleResult : BaseResponse
     {
-        public List<PersonAstronaut> People { get; set; } = new List<PersonAstronaut> { };
-
+        public List<PersonAstronaut> People { get; set; } = new List<PersonAstronaut>();
     }
 }

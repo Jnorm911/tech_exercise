@@ -1,11 +1,9 @@
-using System;
-using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using StargateAPI.Business.Data;
+using Microsoft.Extensions.Logging.Abstractions;
 using StargateAPI.Business.Queries;
-using StargateAPI.Business.Dtos;
-using Xunit;
+
 
 namespace StrategyAPI.Tests.Astronaut
 {
@@ -30,7 +28,8 @@ namespace StrategyAPI.Tests.Astronaut
 
             using var context = CreateContext(connection);
 
-            var handler = new GetAstronautDutiesByNameHandler(context);
+            var logger = NullLogger<GetAstronautDutiesByNameHandler>.Instance;
+            var handler = new GetAstronautDutiesByNameHandler(context, logger);
 
             var request = new GetAstronautDutiesByName { Name = "Nobody" };
 
@@ -77,7 +76,8 @@ namespace StrategyAPI.Tests.Astronaut
 
             await context.SaveChangesAsync();
 
-            var handler = new GetAstronautDutiesByNameHandler(context);
+            var logger = NullLogger<GetAstronautDutiesByNameHandler>.Instance;
+            var handler = new GetAstronautDutiesByNameHandler(context, logger);
 
             var request = new GetAstronautDutiesByName { Name = "Teal'c" };
 

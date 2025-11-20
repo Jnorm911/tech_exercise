@@ -14,6 +14,7 @@ namespace StargateAPI.Business.Queries
     public class GetPersonByNameHandler : IRequestHandler<GetPersonByName, GetPersonByNameResult>
     {
         private readonly StargateContext _context;
+
         public GetPersonByNameHandler(StargateContext context)
         {
             _context = context;
@@ -23,11 +24,22 @@ namespace StargateAPI.Business.Queries
         {
             var result = new GetPersonByNameResult();
 
-            var query = $"SELECT a.Id as PersonId, a.Name, b.CurrentRank, b.CurrentDutyTitle, b.CareerStartDate, b.CareerEndDate FROM [Person] a LEFT JOIN [AstronautDetail] b on b.PersonId = a.Id WHERE '{request.Name}' = a.Name";
+            // Parameterized query — safe, case-insensitive
+            var query =
+                "SELECT a.Id as PersonId, a.Name, b.CurrentRank, b.CurrentDutyTitle, " +
+                "b.CareerStartDate, b.CareerEndDate " +
+                "FROM [Person] a " +
+                "LEFT JOIN [AstronautDetail] b ON b.PersonId = a.Id " +
+                "WHERE a.Name = @Name COLLATE NOCASE";
 
-            var person = await _context.Connection.QueryAsync<PersonAstronaut>(query);
+            // Normalize input
+            var normalizedName = request.Name.Trim();
 
-            result.Person = person.FirstOrDefault();
+            // Query for a single match
+            var person = await _context.Connection
+                .QueryFirstOrDefaultAsync<PersonAstronaut>(query, new { Name = normalizedName });
+
+            result.Person = person; // Person may be null and that is OK
 
             return result;
         }
