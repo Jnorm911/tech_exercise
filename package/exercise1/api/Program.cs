@@ -3,6 +3,16 @@ using StargateAPI.Business.Commands;
 using StargateAPI.Business.Data;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAngular",
+        policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        });
+});
 // Add logging.
 builder.Logging.AddConsole();
 
@@ -23,6 +33,8 @@ builder.Services.AddMediatR(cfg =>
 
 var app = builder.Build();
 
+app.UseCors("AllowAngular");
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -37,5 +49,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
-
